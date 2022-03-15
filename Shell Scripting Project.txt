@@ -1,0 +1,414 @@
+#variables
+choice=6
+filename=""
+ans1=0
+person_info[4]=""
+phone_numbers=""
+search=""
+delete=""
+global=""
+#Function to check name validation
+name_validation(){
+echo "$1" | grep "^[a-zA-Z]*$"
+res2="$?"
+if [[ $res2 = 0 ]]
+then
+echo "Valid name"
+return 0
+else
+echo "Invalid name, name must contain only characters"
+return 1
+fi
+}
+#Function to check number validation
+is_digit(){
+echo "$1" | grep "^[0-9]*$"
+res2="$?"
+if [[ $res2 = 0 ]] ;then
+return 0
+else
+return 1
+fi
+}
+
+length_validation(){
+length="${#1}"
+echo $length
+if [ $length -eq 9 -o $length -eq 10 ] ;then
+return 0
+else
+return 1
+fi
+}
+
+#Function to search for a record
+search_function(){
+IFS=' '
+read -ra arr <<< "$1"
+s1="${arr[0]}"
+s2="${arr[1]}"
+s3="${arr[2]}"
+s4="${arr[3]}"
+if [ -z "$s3" ]; then s3=" "; fi
+if [ -z "$s2" ]; then s2=" "; fi
+if [ -z "$s4" ]; then s4=" "; fi
+
+result="$(egrep -i -w "($s1|$s2|$s3|$s4)" Contact.txt)"
+if [ -z "$result" ]
+then
+echo "NOT FOUND!!"
+global=""
+else
+echo "$result"
+global="$result"
+fi
+}
+
+#Function to check if file exists
+while true
+do
+echo Enter contact file name:
+read filename
+if [ -e $filename  ]
+then
+echo "Continue to main menu"
+break
+else
+echo "ERROR: file does not exist!!"
+fi
+done
+
+#Main menu
+echo "**** Welcome to Contact Management System ****"
+echo
+echo
+
+while true
+do
+
+echo "         MAIN MENU    "
+echo ======================
+echo [1] Add a new Contact
+echo [2] List all Contacts
+echo [3] Search for contact
+echo [4] Edit a contact
+echo [5] Delete a Contact
+echo [0] Exit
+echo ==================
+echo Enter the choice:
+read choice
+
+#choice 1 : add a new contact
+if [ $choice -eq 1 ]
+then
+#First field info
+while true
+do
+echo "Enter first name (Compulsory):"
+read person_info[0]
+name_validation "${person_info[0]}"
+res=$?
+if [ $res -eq 0 ] ;then
+break
+fi
+done
+person_info[0]+=", "
+
+#Second field info
+while true
+do
+echo "Enter last name (or empty if there is no last name):"
+read person_info[1]
+if [ "${person_info[1]}" = "empty" ]
+then
+person_info[1]="EMPTY"
+break
+else
+name_validation "${person_info[1]}"
+res=$?
+if [ $res -eq 0 ] ;then
+break
+fi
+fi
+done
+person_info[1]+=", "
+
+#Third field info
+while true
+do
+echo "Enter phone number (Compulsory):"
+read phone_numbers
+
+is_digit "$phone_numbers"
+resd1=$?
+length_validation "$phone_numbers"
+resd2=$?
+
+if [ $resd1 = 0 ] && [ $resd2 = 0 ]
+then
+person_info[2]+=$phone_numbers
+person_info[2]+=";"
+echo "Valid number, do you want to enter another number(y for yes, anything for no):"
+read res3
+if [ "$res3" = "y" -o "$res3" = "Y" ]
+then
+echo ""
+else
+break
+fi
+
+elif [ $resd1 = 1 ] && [ $resd2 = 0 ]
+then
+echo "Invalid number, the number must contain only digits"
+elif [ $resd1 = 0 ] && [ $resd2 = 1 ]
+then
+echo "Invalid number, the number lenght must be 9 or 10"
+else
+echo "Invalid number, the number lenght must be 9 or 10 and contain only digits"
+fi
+done
+
+#Fourth field info
+while true
+do
+echo "Enter email address (or empty if there is no email address):"
+read person_info[3]
+if [ "${person_info[3]}" = "empty" ] ;then
+person_info[3]="EMPTY"
+break
+elif [[ "${person_info[3]}" = *"@"* ]] ;then
+echo "valid email"
+break
+else
+echo "Invalid input,email must contain @ symbol"
+fi
+done
+
+echo ${person_info[@]} >> Contact.txt
+person_info[2]=""
+
+#choice 2 : listing all contacts
+elif [ $choice -eq 2 ]
+then
+echo "Enter required fields:"
+echo "1. first name only"
+echo "2. first and last name"
+echo "3. first name,last name,phone number"
+echo "4. all fields"
+while true
+do
+read fnum
+if [ $fnum -eq 1 -o $fnum -eq 2 -o $fnum -eq 3 -o $fnum -eq 4 ]
+then
+break
+else
+echo "Invalid field number"
+echo "Enter a valid field number:"
+fi
+done
+
+echo "To list contacts based on the first name enter f , on the last name enter l:"
+while true
+do
+read ans1
+if [ "$ans1" = "f" ]
+then
+if [ $fnum -eq 1 ];then
+cat Contact.txt | (sed -u 1q; sort -f | awk '{ print $1 }')
+break
+elif [ $fnum -eq 2 ];then
+cat Contact.txt | (sed -u 1q; sort -f | awk '{ print $1 $2 }')
+break
+elif [ $fnum -eq 3 ];then
+cat Contact.txt | (sed -u 1q; sort -f | awk '{ print $1 $2 $3 }')
+break
+elif [ $fnum -eq 4 ];then
+cat Contact.txt | (sed -u 1q; sort -f | awk '{ print $1 $2 $3 $4 }')
+break
+fi
+
+elif [ "$ans1" = "l" ]
+then
+if [ $fnum -eq 1 ];then
+cat Contact.txt | (sed -u 1q; sort -f -k 2 | awk '{ print $1 }')
+break
+elif [ $fnum -eq 2 ];then
+cat Contact.txt | (sed -u 1q; sort -f -k 2 | awk '{ print $1 $2 }')
+break
+elif [ $fnum -eq 3 ];then
+cat Contact.txt | (sed -u 1q; sort -f -k 2 | awk '{ print $1 $2 $3 }')
+break
+elif [ $fnum -eq 4 ];then
+cat Contact.txt | (sed -u 1q; sort -f -k 2 | awk '{ print $1 $2 $3 $4 }')
+break
+fi
+break
+
+else
+echo "ERROR: enter a valid choice"
+fi
+
+done
+echo
+
+
+#choice 3 : search for contact
+elif [ $choice -eq 3 ]
+then
+echo "Enter the name/email/phone number/combination of fields to search for:"
+read search
+search_function "$search"
+
+#choice 4 : Edit contact
+elif [ $choice -eq 4 ]
+then
+echo "Enter agent name"
+read name
+search_function "$name"
+echo "$global"
+if [ -z "$global" ]; then echo "This agent does not exist" ;
+else
+echo "Enter the field you want to edit"
+echo "0 for first name , 1 for last name , 2 for phone number , 3 for email"
+read field
+echo "Enter the updated value of the field"
+read updated
+#validation
+while true
+do
+
+if [ $field -eq 0 ] ; then
+while true
+do
+name_validation "$updated"
+res=$?
+if [ $res -eq 0 ] ;then
+break
+else
+echo "Enter a valid name"
+read updated
+fi
+done
+break
+
+
+elif [ $field -eq 1 ] ; then
+if [ "$updated" = "empty" ]
+then
+$updated="EMPTY"
+break
+fi
+while true
+do
+name_validation "$updated"
+res=$?
+if [ $res -eq 0 ] ;then
+break
+else
+echo "Enter a valid name"
+read updated
+fi
+done
+break
+
+elif [ $field -eq 2 ] ; then
+while true
+do
+is_digit "$updated"
+resd1=$?
+length_validation "$updated"
+resd2=$?
+
+if [ $resd1 = 0 ] && [ $resd2 = 0 ]
+then
+echo "Valid number"
+echo "Valid number, do you want to enter another number(y for yes, anything for no):"
+read res3
+if [ "$res3" = "y" -o "$res3" = "Y" ]
+then
+echo "Enter number:"
+read new
+updated="${updated};${new}"
+else
+break
+fi
+break
+
+elif [ $resd1 = 1 ] && [ $resd2 = 0 ] ;then
+echo "Invalid number, the number must contain only digits"
+
+elif [ $resd1 = 0 ] && [ $resd2 = 1 ];then
+echo "Invalid number, the number lenght must be 9 or 10"
+
+else
+echo "Invalid number, the number lenght must be 9 or 10 and contain only digits"
+fi
+
+echo "Enter other valid number"
+read updated
+
+done
+break
+
+elif [ $field -eq 3 ] ; then
+while true
+do
+if [ "$updated" = "empty" ] ;then
+updated="EMPTY"
+break
+elif [[ "$updated" = *"@"* ]] ;then
+echo "Valid email"
+break
+else
+echo "Invalid input,email must contain @ symbol"
+echo "Enter a valid email"
+read updated
+fi
+done
+break
+
+else
+echo "Invalid field"
+echo "Enter a valid field"
+read field
+fi
+done
+if [ $field -eq 1 -o $field -eq 2 -o $field -eq 3 ]
+then
+a=' '
+a="${a}${updated}"
+fi
+if [ $field -eq 0 ]
+then
+a=$updated
+fi
+IFS=','
+read -ra ar <<< "$global"
+sed -i "s/${ar[$field]}/$a/" Contact.txt
+fi
+#choice 5 : Delete contact
+elif [ $choice -eq 5 ]
+then
+echo "Enter first and last name of the record you wish to delete"
+read delete
+search_function "$delete"
+echo "$global"
+if [ -z "$global" ]; then echo "BYE!!";
+else
+grep -v "$global" Contact.txt > temp.txt && mv temp.txt Contact.txt
+echo "DONE,record deleted successfully"
+fi
+#choice 0 : Exit
+elif [ $choice -eq 0 ]
+then
+echo "BYE"
+exit
+
+else
+echo "ERROR: invalid choice"
+echo "Please enter a valid choice (from 0 to 5)"
+echo
+
+fi
+
+done
